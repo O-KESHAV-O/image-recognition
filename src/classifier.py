@@ -1,3 +1,5 @@
+import io
+import requests
 import torch
 import torch.nn.functional as F
 from PIL import Image
@@ -12,12 +14,17 @@ class ImageClassifier:
         self.transform = self.weights.transforms()
         self.categories = self.weights.meta["categories"]
 
-    def _load_image(self, image_path: str) -> Image.Image:
-        image = Image.open(image_path)
+    def _load_image(self, image_source: str) -> Image.Image:
+        if image_source.startswith("http://") or image_source.startswith("https://"):
+            resp = requests.get(image_source, timeout=10)
+            resp.raise_for_status()
+            image = Image.open(io.BytesIO(resp.content))
+        else:
+            image = Image.open(image_source)
         return image.convert("RGB")
 
-    def predict(self, image_path: str, top_k: int = 5):
-        image = self._load_image(image_path)
+    def predict(self, image_source: str, top_k: int = 5):
+        image = self._load_image(image_source)
         input_tensor = self.transform(image).unsqueeze(0).to(self.device)
         with torch.no_grad():
             output = self.model(input_tensor)
