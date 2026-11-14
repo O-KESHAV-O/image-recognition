@@ -6,8 +6,11 @@ from PIL import Image
 from torchvision.models import mobilenet_v3_small, MobileNet_V3_Small_Weights
 
 class ImageClassifier:
-    def __init__(self):
-        self.device = torch.device("cpu")
+    def __init__(self, device: str = None):
+        if device is None:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = torch.device(device)
         self.weights = MobileNet_V3_Small_Weights.DEFAULT
         self.model = mobilenet_v3_small(weights=self.weights).to(self.device)
         self.model.eval()
